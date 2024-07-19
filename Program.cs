@@ -15,7 +15,7 @@ namespace Project_BO4_Report
             }
 
             const string tempReportDir = "ReporterTemp";
-            string shieldInfoFileName = $@"ShieldInfo{ DateTime.Now.ToString("yyyy-dd-MM-HH-mm-ss")}.txt";
+            string shieldInfoFileName = $@"ShieldInfo{ DateTime.Now.ToString("dd-MM-yyyy-HH-mm-ss")}.txt";
             string shieldInfoFilePath = Path.Combine(tempReportDir, shieldInfoFileName);
 
             Directory.CreateDirectory(tempReportDir);
@@ -92,7 +92,7 @@ namespace Project_BO4_Report
             // Prepere for sending
             if (Directory.GetFiles("ReporterTemp").Length > 1)
             {
-                ZipFile.CreateFromDirectory(tempReportDir, $"SEND-ME-{DateTime.UtcNow.ToString("yyyy-dd-M--HH-mm-ss")}.zip");
+                ZipFile.CreateFromDirectory(tempReportDir, $"SEND-ME-{DateTime.Now.ToString("dd-MM-yyyy-HH-mm-ss")}.zip");
             }
             else
             {
