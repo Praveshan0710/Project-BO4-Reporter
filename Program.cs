@@ -1,4 +1,5 @@
 ﻿using System.IO.Compression;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Project_BO4_Report
 {
@@ -6,17 +7,20 @@ namespace Project_BO4_Report
     {
         static void Main()
         {
-            //Check if bo4 in dir
-
-            if (!IsBo4Dir())
+            if (!File.Exists("BlackOps4.exe"))
             {
                 Console.WriteLine("Please run this application in your Black Ops 4 directory");
                 Console.ReadKey(true);
                 return;
             }
 
-            Directory.CreateDirectory("ReporterTemp");
-            using (var sw = new StreamWriter($@"ReporterTemp\ShieldInfo{DateTime.Now.ToString("yyyy-dd-MM-HH-mm-ss")}.txt", true))
+            const string tempReportDir = "ReporterTemp";
+            string shieldInfoFileName = $@"ShieldInfo{ DateTime.Now.ToString("yyyy-dd-MM-HH-mm-ss")}.txt";
+            string shieldInfoFilePath = Path.Combine(tempReportDir, shieldInfoFileName);
+
+            Directory.CreateDirectory(tempReportDir);
+
+            using (var sw = new StreamWriter(shieldInfoFilePath, true))
             {
                 //Get project-bo4.json data
                 sw.WriteLine("-----------project-bo4.json-----------\n");
@@ -28,6 +32,7 @@ namespace Project_BO4_Report
                 {
                     sw.WriteLine("Couldn't find project-bo4.json.");
                 }
+
                 //Get project-bo4.log data
                 sw.WriteLine("\n-----------project-bo4.log-----------\n");
                 try
@@ -38,6 +43,7 @@ namespace Project_BO4_Report
                 {
                     sw.WriteLine("Couldn't find project-bo4.log.");
                 }
+
                 //Get launcher version if used
                 sw.WriteLine("\n-----------project-bo4 launcher settings-----------\n");
                 try
@@ -52,7 +58,8 @@ namespace Project_BO4_Report
                 {
                     sw.WriteLine(ex.Message);
                 }
-                //Get minidumps of any
+
+                //Get minidumps if any
                  sw.WriteLine("\n-----------minidumps-----------\n");
                 if (Directory.Exists("minidumps"))
                 {
@@ -62,27 +69,36 @@ namespace Project_BO4_Report
                         {
                             File.Copy(file, Path.Combine(@"ReporterTemp", Path.GetFileName(file)));
                         }
+                        sw.WriteLine($"Found {Directory.GetFiles("minidumps").Length} minidumps.");
                     }
                 }
                 else
                 {
-                    sw.WriteLine("No minidumps found.");
+                    sw.WriteLine("No minidumps were found.");
                 }
+
+                // Get Project-Bo4 dir files
+                sw.WriteLine("\n-----------project-bo4 directory-----------\n");
+                try
+                {
+                    foreach (var file in Directory.EnumerateFiles("project-bo4", "*", SearchOption.AllDirectories))
+                    {
+                        sw.WriteLine(file);
+                    }
+                }
+                catch (Exception e) { sw.WriteLine(e.Message); }
             }
-            try
+
+            // Prepere for sending
+            if (Directory.GetFiles("ReporterTemp").Length > 1)
             {
-                ZipFile.CreateFromDirectory("ReporterTemp", $"SEND-ME-{DateTime.UtcNow.ToString("yyyy-dd-M--HH-mm-ss")}.zip");
+                ZipFile.CreateFromDirectory(tempReportDir, $"SEND-ME-{DateTime.UtcNow.ToString("yyyy-dd-M--HH-mm-ss")}.zip");
             }
-            catch (Exception) { }
-            finally
+            else
             {
-                Directory.Delete("ReporterTemp", true);
+                File.Move(shieldInfoFilePath, shieldInfoFileName); 
             }
-            //Console.WriteLine("");
-        }
-        private static bool IsBo4Dir()
-        {
-            return File.Exists("BlackOps4.exe");
+            Directory.Delete(tempReportDir, true); // Always delete this, the zip or txt file will remain afterwards
         }
     }
 }
